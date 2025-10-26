@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 import os
 
 DEVICE = 'cuda'
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '0,1' # 这里修改看到的卡下标！！！
 starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
 
 def load_image(imfile):
@@ -23,7 +23,8 @@ def load_image(imfile):
     return img[None].to(DEVICE)
 
 def demo(args):
-    model = torch.nn.DataParallel(Monster(args), device_ids=[0])
+    model = torch.nn.DataParallel(Monster(args), device_ids=[0,1])
+    # model = torch.nn.DataParallel(Monster(args))
 
     checkpoint = torch.load(args.restore_ckpt)
     ckpt = dict()
@@ -42,8 +43,10 @@ def demo(args):
     output_directory.mkdir(parents=True, exist_ok=True)
 
     with torch.no_grad():
-        left_images = sorted(glob.glob(os.path.join('/data2/cjd/StereoDatasets/middlebury/', "MiddEval3", 'testF', '*/im0.png')))
-        right_images = sorted(glob.glob(os.path.join('/data2/cjd/StereoDatasets/middlebury/', "MiddEval3", 'testF', '*/im1.png')))
+        # left_images = sorted(glob.glob(os.path.join('/home/djj20067677/KunlinLi/data/StereoData/middlebury/', "MiddEval3", 'testQ', '*/im0.png')))
+        # right_images = sorted(glob.glob(os.path.join('/home/djj20067677/KunlinLi/data/StereoData/middlebury/', "MiddEval3", 'testQ', '*/im1.png')))
+        left_images = sorted(glob.glob(args.left_imgs))
+        right_images = sorted(glob.glob(args.right_imgs))
         print(f"Found {len(left_images)} images. Saving files to {output_directory}/")
 
         for (imfile1, imfile2) in tqdm(list(zip(left_images, right_images))):
@@ -82,11 +85,11 @@ def demo(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--restore_ckpt', help="restore checkpoint", default="/data2/cjd/mono_fusion/checkpoints/middlebury.pth")
+    parser.add_argument('--restore_ckpt', help="restore checkpoint", default="/home/djj20067677/KunlinLi/Params/Monster/origin_checkpoints/middlebury.pth")
     parser.add_argument('--save_numpy', action='store_true', help='save output as numpy arrays')
-    parser.add_argument('-l', '--left_imgs', help="path to all first (left) frames", default=None)
-    parser.add_argument('-r', '--right_imgs', help="path to all second (right) frames", default=None)
-    parser.add_argument('--output_directory', help="directory to save output", default='./test_output/middlebury')
+    parser.add_argument('-l', '--left_imgs', help="path to all first (left) frames", default='/home/djj20067677/KunlinLi/data/StereoData/middlebury/MiddEval3/testH/*/im0.png')
+    parser.add_argument('-r', '--right_imgs', help="path to all second (right) frames", default='/home/djj20067677/KunlinLi/data/StereoData/middlebury/MiddEval3/testH/*/im1.png')
+    parser.add_argument('--output_directory', help="directory to save output", default='/home/djj20067677/KunlinLi/Output/Monster/test_output/middlebury_H')
     parser.add_argument('--mixed_precision', action='store_true', help='use mixed precision')
     parser.add_argument('--valid_iters', type=int, default=32, help='number of flow-field updates during forward pass')
 
