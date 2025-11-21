@@ -1,5 +1,16 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda",
-    "python-envs.pythonProjects": []
+    "python-envs.pythonProjects": [],
+    //"workbench.colorTheme": "Monokai Dimmed",
+    // "editor.fontFamily": "Fira Code",
+    "editor.fontLigatures": true,
+    "editor.fontSize": 18,
+    "editor.fontWeight": "normal",
+    // "editor.fontFamily": "Consolas, 'Courier New', monospace",
+    // "editor.fontFamily": "'Monaspace Krypton', monospace"
+    "editor.fontFamily": "'Jetbrains Mono','HarmonyOS Sans SC','Courier New', monospace",
+    // "editor.fontFamily": "'Monaspace Argon' monospace",
+    // "editor.fontFamily": "'Monaspace Neon' monospace",
+    // "editor.fontFamily": "'Monaspace Radon' monospace"
 }
