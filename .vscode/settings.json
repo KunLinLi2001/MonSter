@@ -5,11 +5,14 @@
     //"workbench.colorTheme": "Monokai Dimmed",
     // "editor.fontFamily": "Fira Code",
     "editor.fontLigatures": true,
-    "editor.fontSize": 18,
+    "editor.fontSize": 14,
     "editor.fontWeight": "normal",
     // "editor.fontFamily": "Consolas, 'Courier New', monospace",
     // "editor.fontFamily": "'Monaspace Krypton', monospace"
     "editor.fontFamily": "'Jetbrains Mono','HarmonyOS Sans SC','Courier New', monospace",
+    "python.analysis.extraPaths": [
+        "./Depth-Anything-V2-list3"
+    ],
     // "editor.fontFamily": "'Monaspace Argon' monospace",
     // "editor.fontFamily": "'Monaspace Neon' monospace",
     // "editor.fontFamily": "'Monaspace Radon' monospace",
