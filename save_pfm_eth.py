@@ -68,7 +68,11 @@ def demo(args):
             image1, image2 = padder.pad(image1, image2)
 
             starter.record()
-            disp = model(image1, image2, iters=args.valid_iters, test_mode=True)
+            # 这里有修改！！
+            iters_t = torch.tensor([args.valid_iters], dtype=torch.long, device=image1.device)
+            mode_t = torch.tensor([1], dtype=torch.uint8, device=image1.device)
+            disp = model((image1, image2, iters_t, mode_t))
+            # disp = model(image1, image2, iters=args.valid_iters, test_mode=True)
 
             ender.record()
             torch.cuda.synchronize()

@@ -92,7 +92,11 @@ def demo(args):
             padder = InputPadder(image1.shape, divis_by=32)
             image1, image2 = padder.pad(image1, image2)
             start_time = time.time()
-            disp = model(image1, image2, iters=args.valid_iters, test_mode=True)
+            # 这里有修改！！
+            iters_t = torch.tensor([args.valid_iters], dtype=torch.long, device=image1.device)
+            mode_t = torch.tensor([1], dtype=torch.uint8, device=image1.device)
+            disp = model((image1, image2, iters_t, mode_t))
+            # disp = model(image1, image2, iters=args.valid_iters, test_mode=True)
 
             end_time = time.time()
             inference_time = end_time - start_time
