@@ -8,10 +8,10 @@ import logging
 import numpy as np
 import torch
 from tqdm import tqdm
-from monster import Monster, autocast
+from core.monster import Monster, autocast
 
-import stereo_datasets as datasets
-from utils.utils import InputPadder
+import core.stereo_datasets as datasets
+from core.utils.utils import InputPadder
 from PIL import Image
 import torch.nn.functional as F
 
@@ -47,6 +47,7 @@ class NormalizeTensor(object):
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
+# 完成
 @torch.no_grad()
 def validate_eth3d(model, iters=32, mixed_prec=False):
     """ Peform validation using the ETH3D (train) split """
@@ -64,7 +65,12 @@ def validate_eth3d(model, iters=32, mixed_prec=False):
         image1, image2 = padder.pad(image1, image2)
         with torch.no_grad():
             with autocast(enabled=mixed_prec):
-                flow_pr = model(image1, image2, iters=iters, test_mode=True)
+                # 这里有修改！！
+                iters_t = torch.tensor([iters], dtype=torch.long, device=image1.device)
+                mode_t = torch.tensor([1], dtype=torch.uint8, device=image1.device)
+                flow_pr = model((image1, image2, iters_t, mode_t))
+
+                # flow_pr = model(image1, image2, iters=iters, test_mode=True)
 
         flow_pr = padder.unpad(flow_pr.float()).cpu().squeeze(0)
         assert flow_pr.shape == flow_gt.shape, (flow_pr.shape, flow_gt.shape)
@@ -94,7 +100,7 @@ def validate_eth3d(model, iters=32, mixed_prec=False):
     print("Validation ETH3D: EPE %f, D1 %f" % (epe, d1))
     return {'eth3d-epe': epe, 'eth3d-d1': d1}
 
-
+# 完成
 @torch.no_grad()
 def validate_kitti(model, iters=32, mixed_prec=False):
     """ Peform validation using the KITTI-2015 (train) split """
@@ -102,6 +108,7 @@ def validate_kitti(model, iters=32, mixed_prec=False):
     # aug_params = {'crop_size': list([540, 960])}
     aug_params = {}
     val_dataset = datasets.KITTI(aug_params, image_set='training')
+
     torch.backends.cudnn.benchmark = True
 
     out_list, epe_list, elapsed_list = [], [], []
@@ -116,7 +123,13 @@ def validate_kitti(model, iters=32, mixed_prec=False):
         with torch.no_grad():
             with autocast(enabled=mixed_prec):
                 start = time.time()
-                flow_pr = model(image1, image2, iters=iters, test_mode=True)
+
+                # 这里有修改！！
+                iters_t = torch.tensor([iters], dtype=torch.long, device=image1.device)
+                mode_t = torch.tensor([1], dtype=torch.uint8, device=image1.device)
+                flow_pr = model((image1, image2, iters_t, mode_t))
+
+                # flow_pr = model(image1, image2, iters=iters, test_mode=True)
                 end = time.time()
 
         if val_id > 50:
@@ -152,7 +165,7 @@ def validate_kitti(model, iters=32, mixed_prec=False):
     print(f"Validation KITTI: EPE {epe}, D1 {d1}, {format(1/avg_runtime, '.2f')}-FPS ({format(avg_runtime, '.3f')}s)")
     return {'kitti-epe': epe, 'kitti-d1': d1}
 
-
+# 完成
 @torch.no_grad()
 def validate_vkitti(model, iters=32, mixed_prec=False):
     """ Peform validation using the vkitti (train) split """
@@ -172,7 +185,13 @@ def validate_vkitti(model, iters=32, mixed_prec=False):
 
         with autocast(enabled=mixed_prec):
             start = time.time()
-            flow_pr = model(image1, image2, iters=iters, test_mode=True)
+
+            # 这里有修改！！
+            iters_t = torch.tensor([iters], dtype=torch.long, device=image1.device)
+            mode_t = torch.tensor([1], dtype=torch.uint8, device=image1.device)
+            flow_pr = model((image1, image2, iters_t, mode_t))
+            # flow_pr = model(image1, image2, iters=iters, test_mode=True)
+
             end = time.time()
 
         if val_id > 50:
@@ -209,8 +228,6 @@ def validate_vkitti(model, iters=32, mixed_prec=False):
     print(f"Validation VKITTI: EPE {epe}, D1 {d1}, {format(1 / avg_runtime, '.2f')}-FPS ({format(avg_runtime, '.3f')}s)")
     return {'vkitti-epe': epe, 'vkitti-d1': d1}
 
-
-
 @torch.no_grad()
 def validate_sceneflow(model, iters=32, mixed_prec=False):
     """ Peform validation using the Scene Flow (TEST) split """
@@ -220,7 +237,7 @@ def validate_sceneflow(model, iters=32, mixed_prec=False):
 
     out_list, epe_list, elapsed_list = [], [], []
     for val_id in tqdm(range(len(val_dataset))):
-        _, image1, image2, flow_gt, valid_gt = val_dataset[val_id]
+        _, image1, image2, flow_gt, valid_gt = val_dataset[val_id] # pyright: ignore[reportAssignmentType]
 
         image1 = image1[None].cuda()
         image2 = image2[None].cuda()
@@ -230,7 +247,11 @@ def validate_sceneflow(model, iters=32, mixed_prec=False):
 
         with autocast(enabled=mixed_prec):
             start = time.time()
-            flow_pr = model(image1, image2, iters=iters, test_mode=True)
+            # 这里有修改！！
+            iters_t = torch.tensor([iters], dtype=torch.long, device=image1.device)
+            mode_t = torch.tensor([1], dtype=torch.uint8, device=image1.device)
+            flow_pr = model((image1, image2, iters_t, mode_t))
+            # flow_pr = model(image1, image2, iters=iters, test_mode=True)
             end = time.time()
         # print(torch.cuda.memory_summary(device=None, abbreviated=False))
         if val_id > 50:
@@ -272,6 +293,7 @@ def validate_sceneflow(model, iters=32, mixed_prec=False):
     print(f"Validation Scene Flow: EPE {epe}, D1 {d1}, {format(1/avg_runtime, '.2f')}-FPS ({format(avg_runtime, '.3f')}s)" )
     return {'scene-disp-epe': epe, 'scene-disp-d1': d1}
 
+# 完成
 @torch.no_grad()
 def validate_driving(model, iters=32, mixed_prec=False):
     """ Peform validation using the DrivingStereo (test) split """
@@ -294,7 +316,11 @@ def validate_driving(model, iters=32, mixed_prec=False):
 
         with torch.autocast(device_type='cuda', enabled=mixed_prec):
             start = time.time()
-            flow_pr = model(image1, image2, iters=iters, test_mode=True)
+            # 这里有修改！！
+            iters_t = torch.tensor([iters], dtype=torch.long, device=image1.device)
+            mode_t = torch.tensor([1], dtype=torch.uint8, device=image1.device)
+            flow_pr = model((image1, image2, iters_t, mode_t))
+            # flow_pr = model(image1, image2, iters=iters, test_mode=True)
             end = time.time()
 
         if val_id > 50:
@@ -334,7 +360,7 @@ def validate_driving(model, iters=32, mixed_prec=False):
     print(f"Validation DrivingStereo: EPE {epe}, bad1 {bad_1}, bad2 {bad_2}, bad3 {d1}, {format(1/avg_runtime, '.2f')}-FPS ({format(avg_runtime, '.3f')}s)")
     return {'driving-epe': epe, 'driving-d1': d1}
 
-
+# 完成
 @torch.no_grad()
 def validate_middlebury(model, iters=32, split='F', mixed_prec=False):
     """ Peform validation using the Middlebury-V3 dataset """
@@ -352,10 +378,14 @@ def validate_middlebury(model, iters=32, split='F', mixed_prec=False):
         image1, image2 = padder.pad(image1, image2)
 
         with autocast(enabled=mixed_prec):
-            flow_pr = model(image1, image2, iters=iters, test_mode=True)
+            # 这里有修改！！
+            iters_t = torch.tensor([iters], dtype=torch.long, device=image1.device)
+            mode_t = torch.tensor([1], dtype=torch.uint8, device=image1.device)
+            flow_pr = model((image1, image2, iters_t, mode_t))
+            # flow_pr = model(image1, image2, iters=iters, test_mode=True)
         flow_pr = padder.unpad(flow_pr).cpu().squeeze(0)
-        a = input('input something')
-        print(a)
+        # a = input('input something')
+        # print(a)
 
         assert flow_pr.shape == flow_gt.shape, (flow_pr.shape, flow_gt.shape)
         epe = torch.sum((flow_pr - flow_gt)**2, dim=0).sqrt()
@@ -404,8 +434,8 @@ if __name__ == '__main__':
     parser.add_argument('--max_disp', type=int, default=192, help="max disp of geometry encoding volume")
     args = parser.parse_args()
 
-    model = torch.nn.DataParallel(Monster(args), device_ids=[0])
-
+    # model = torch.nn.DataParallel(Monster(args), device_ids=[0])
+    model = torch.nn.DataParallel(Monster(args))
     total_params = sum(p.numel() for p in model.parameters()) / 1e6
     print(f"Total number of parameters: {total_params:.2f}M")
 

@@ -6,8 +6,8 @@ import numpy as np
 import torch
 from tqdm import tqdm
 from pathlib import Path
-from monster import Monster
-from utils.utils import InputPadder
+from core.monster import Monster
+from core.utils.utils import InputPadder
 from PIL import Image
 from matplotlib import pyplot as plt
 import os
@@ -18,7 +18,7 @@ import sys
 import time
 
 DEVICE = 'cuda'
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 class NormalizeTensor(object):
     """Normalize a tensor by given mean and std."""
@@ -54,8 +54,8 @@ def load_image(imfile):
     return img[None].to(DEVICE)
 
 def demo(args):
-    model = torch.nn.DataParallel(Monster(args), device_ids=[0])
-
+    # model = torch.nn.DataParallel(Monster(args).cuda(), device_ids=[0])
+    model = torch.nn.DataParallel(Monster(args).cuda())
     assert os.path.exists(args.restore_ckpt)
     checkpoint = torch.load(args.restore_ckpt)
     ckpt = dict()
@@ -108,15 +108,17 @@ def demo(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--restore_ckpt', help="restore checkpoint", default="/data2/cjd/mono_fusion/checkpoints/kitti.pth")
+    parser.add_argument('--restore_ckpt', help="restore checkpoint", default="/home/djj20067677/KunlinLi/Params/Monster/origin_checkpoints/kitti.pth")
 
+    # 终端里加上 --save_numpy 就会保存npy，不加就不会保存
     parser.add_argument('--save_numpy', action='store_true', help='save output as numpy arrays')
-    # parser.add_argument('-l', '--left_imgs', help="path to all first (left) frames", default="/data2/cjd/StereoDatasets/kitti//2015/testing/image_2/*_10.png")
-    # parser.add_argument('-r', '--right_imgs', help="path to all second (right) frames", default="/data2/cjd/StereoDatasets/kitti/2015/testing/image_3/*_10.png")
-    parser.add_argument('-l', '--left_imgs', help="path to all first (left) frames", default="/data2/cjd/StereoDatasets/kitti/2012/testing/colored_0/*_10.png")
-    parser.add_argument('-r', '--right_imgs', help="path to all second (right) frames", default="/data2/cjd/StereoDatasets/kitti/2012/testing/colored_1/*_10.png")
 
-    parser.add_argument('--output_directory', help="directory to save output", default="kitti_2012")
+    parser.add_argument('-l', '--left_imgs', help="path to all first (left) frames", default="/home/djj20067677/KunlinLi/data/StereoData/kitti/KITTI_2015/testing/image_2/*_10.png")
+    parser.add_argument('-r', '--right_imgs', help="path to all second (right) frames", default="/home/djj20067677/KunlinLi/data/StereoData/kitti/KITTI_2015/testing/image_3/*_10.png")
+    # parser.add_argument('-l', '--left_imgs', help="path to all first (left) frames", default="/home/djj20067677/KunlinLi/data/StereoData/kitti/KITTI_2012/testing/colored_0/*_10.png")
+    # parser.add_argument('-r', '--right_imgs', help="path to all second (right) frames", default="/home/djj20067677/KunlinLi/data/StereoData/kitti/KITTI_2012/testing/colored_1/*_10.png")
+
+    parser.add_argument('--output_directory', help="directory to save output", default="/home/djj20067677/KunlinLi/Output/Monster/test_output/kitti_2015")
     parser.add_argument('--mixed_precision', action='store_true', help='use mixed precision')
     parser.add_argument('--valid_iters', type=int, default=32, help='number of flow-field updates during forward pass')
     parser.add_argument('--encoder', type=str, default='vitl', choices=['vits', 'vitb', 'vitl', 'vitg'])
@@ -133,5 +135,5 @@ if __name__ == '__main__':
     parser.add_argument('--max_disp', type=int, default=192, help="max disp of geometry encoding volume")
     
     args = parser.parse_args()
-
+    # print(args.save_numpy)
     demo(args)

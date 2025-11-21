@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 import os
 
 DEVICE = 'cuda'
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
 
 def load_image(imfile):
@@ -23,7 +23,8 @@ def load_image(imfile):
     return img[None].to(DEVICE)
 
 def demo(args):
-    model = torch.nn.DataParallel(Monster(args), device_ids=[0])
+    # model = torch.nn.DataParallel(Monster(args), device_ids=[0])
+    model = torch.nn.DataParallel(Monster(args))
 
     checkpoint = torch.load(args.restore_ckpt)
     ckpt = dict()
@@ -42,7 +43,7 @@ def demo(args):
     output_directory.mkdir(parents=True, exist_ok=True)
 
     with torch.no_grad():
-        datasets_path = '/data2/cjd/StereoDatasets/eth3d/two_view_testing'
+        datasets_path = args.datasets_path
         for dir_name in os.listdir(datasets_path):
             dir_path = os.path.join(datasets_path, dir_name)
             if not os.path.isdir(dir_path):
@@ -90,11 +91,12 @@ def demo(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--restore_ckpt', help="restore checkpoint", default="/data2/cjd/mono_fusion/checkpoints/eth3d.pth")
+    parser.add_argument('--restore_ckpt', help="restore checkpoint", default="/home/djj20067677/KunlinLi/Params/Monster/origin_checkpoints/eth3d.pth")
     parser.add_argument('--save_numpy', action='store_true', help='save output as numpy arrays')
+    parser.add_argument('--datasets_path', help='path to all left and right frames', default='/home/djj20067677/KunlinLi/data/StereoData/eth3d/two_view_test')
     parser.add_argument('-l', '--left_imgs', help="path to all first (left) frames", default=None)
     parser.add_argument('-r', '--right_imgs', help="path to all second (right) frames", default=None)
-    parser.add_argument('--output_directory', help="directory to save output", default='./test_output/eth3d/')
+    parser.add_argument('--output_directory', help="directory to save output", default='/home/djj20067677/KunlinLi/Output/Monster/test_output/eth3d/')
     parser.add_argument('--mixed_precision', action='store_true', help='use mixed precision')
     parser.add_argument('--valid_iters', type=int, default=32, help='number of flow-field updates during forward pass')
 
