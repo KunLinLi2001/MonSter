@@ -291,7 +291,7 @@ class Monster(nn.Module):
 
         depth_anything = DepthAnythingV2(**mono_model_configs[args.encoder])
         depth_anything_decoder = DepthAnythingV2_decoder(**mono_model_configs[args.encoder])
-        state_dict_dpt = torch.load(f'./pretrained/depth_anything_v2_{args.encoder}.pth', map_location='cpu')
+        state_dict_dpt = torch.load(f'/home/djj20067677/KunlinLi/Params/Depth_Anything_V2/pretrained/depth_anything_v2_{args.encoder}.pth', map_location='cpu')
         # state_dict_dpt = torch.load(f'/home/cjd/cvpr2025/fusion/Depth-Anything-V2-list3/depth_anything_v2_{args.encoder}.pth', map_location='cpu')
         depth_anything.load_state_dict(state_dict_dpt, strict=True)
         depth_anything_decoder.load_state_dict(state_dict_dpt, strict=False)
@@ -348,8 +348,15 @@ class Monster(nn.Module):
         return up_disp
 
 
-    def forward(self, image1, image2, iters=12, flow_init=None, test_mode=False):
-        """ Estimate disparity between pair of frames """
+    def forward(self, inputs):
+        """
+        inputs: (image1, image2, iters_tensor, test_mode_tensor)
+            iters_tensor:  torch.long 形状 [1]   值=iters
+            test_mode_tensor: torch.uint8 形状 [1]  值=1 表示 test_mode=True
+        """
+        image1, image2, iters_tensor, test_mode_tensor = inputs
+        iters = int(iters_tensor.item())
+        test_mode = bool(test_mode_tensor.item())
 
         image1 = (2 * (image1 / 255.0) - 1.0).contiguous()
         image2 = (2 * (image2 / 255.0) - 1.0).contiguous()
@@ -452,3 +459,9 @@ class Monster(nn.Module):
 
         init_disp = context_upsample(init_disp*4., spx_pred.float()).unsqueeze(1)
         return init_disp, disp_preds, depth_mono
+
+    def old_forward(self, image1, image2, iters=12, flow_init=None, test_mode=False):
+        """单卡/调试时仍可直接调用的老接口"""
+        iters_t = torch.tensor([iters], dtype=torch.long, device=image1.device)
+        mode_t = torch.tensor([int(test_mode)], dtype=torch.uint8, device=image1.device)
+        return self.forward((image1, image2, iters_t, mode_t))
